@@ -1,0 +1,14 @@
+# Top-level pins. Exact resolved set is in requirements.lock (pip freeze).
+# Whole stack targets CUDA 13.0, matching this machine's Isaac ROS apt pins
+# (CUDA 13.0 toolkit, TensorRT 10.13.3.9+cuda13.0). Driver supports 13.4.
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.14.1+cu130
+torchvision==0.29.1+cu130
+onnxruntime-gpu[cuda,cudnn]==1.30.0  # modelopt[onnx] 0.48 requires >=1.29,<1.31 on Linux
+nvidia-modelopt[onnx]==0.48.0      # QAT (M5); forces onnx~=1.21.0
+onnx~=1.21.0
+pycocotools
+opencv-python-headless
+numpy>=2,<3
+pandas
+pyyaml

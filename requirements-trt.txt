@@ -1,0 +1,8 @@
+# Installed with --no-deps (see scripts/install_python.sh).
+# tensorrt_cu13_libs 10.13.3.9 depends on 'nvidia-cuda-runtime-cu13', which NVIDIA replaced
+# with a stub that deliberately fails to build ("renamed to nvidia-cuda-runtime").
+# libcudart.so.13 is provided by 'nvidia-cuda-runtime' 13.0.x, already pulled in by torch/ORT.
+# Version must equal the apt C++ TensorRT (10.13.3.9-1+cuda13.0). 10.x keeps IInt8*Calibrator (M4).
+tensorrt-cu13==10.13.3.9
+tensorrt_cu13_libs==10.13.3.9
+tensorrt_cu13_bindings==10.13.3.9
