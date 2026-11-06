@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install pre-commit
+      - run: pre-commit run --all-files --show-diff-on-failure
+
+  cpu-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      # CPU-only: no torch/TensorRT here. GPU tests are marked `gpu` and run locally.
+      - run: pip install pytest numpy pyyaml pandas && pip install -e . --no-deps
+      - run: pytest -m "not gpu"
