@@ -34,6 +34,17 @@ pytest                                  # CPU + GPU tests
 cmake -S cpp -B cpp/build -G Ninja && cmake --build cpp/build && ctest --test-dir cpp/build
 ```
 
+## Authorship (kept current; becomes "I implemented vs I used" in M8)
+
+The project was planned in teaching mode, with the author hand-writing the timing function,
+INT8 calibrator, CUDA kernels and C++ inference loop. On 2026-11-11 the author chose to have
+the AI assistant (Claude) write all of them instead. Every component is listed honestly here.
+
+| Component | Written by |
+|---|---|
+| `benchmark/timing.py` (`time_gpu`) | Claude, reviewed by the author |
+| Methodology, stats, telemetry, env checks, tests | Claude, reviewed by the author |
+
 ## Licences
 
 Code: Apache-2.0. Model licences are listed per model once they're added (SegFormer weights are

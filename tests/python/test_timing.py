@@ -1,4 +1,4 @@
-"""Acceptance tests for time_gpu (the user implements it; see timing.py docstring).
+"""Acceptance tests for time_gpu (spec in timing.py docstring).
 
 Uses torch.cuda._sleep(cycles): a kernel that spins the GPU for a number of clock cycles.
 Its wall duration depends on the current clock, so tests check *ratios*, not absolute ms.
@@ -12,7 +12,7 @@ import pytest
 from infer_toolkit.benchmark.timing import TimingResult, time_gpu
 
 torch = pytest.importorskip("torch")
-pytestmark = [pytest.mark.gpu, pytest.mark.user_impl]
+pytestmark = pytest.mark.gpu
 
 CYCLES = 2_000_000  # roughly 1 ms at ~2 GHz; only ratios matter
 

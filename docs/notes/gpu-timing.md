@@ -1,6 +1,6 @@
 # Note: timing GPU work correctly
 
-Read this before writing `time_gpu` (see `src/infer_toolkit/benchmark/timing.py`).
+Background for `time_gpu` in `src/infer_toolkit/benchmark/timing.py`.
 
 ## 1. The GPU runs asynchronously
 
