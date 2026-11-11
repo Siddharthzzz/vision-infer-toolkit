@@ -14,7 +14,10 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
-markers = ["gpu: needs an NVIDIA GPU + CUDA stack (skipped in CI)"]
+markers = [
+  "gpu: needs an NVIDIA GPU + CUDA stack (skipped in CI)",
+  "user_impl: tests for code the author writes by hand (teaching mode); fail until implemented",
+]
 addopts = "-ra"
 
 [tool.ruff]
