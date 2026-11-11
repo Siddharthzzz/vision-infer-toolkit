@@ -11,11 +11,14 @@ from infer_toolkit.env import (
 
 
 def test_parse_nvidia_smi_csv():
-    line = "NVIDIA GeForce RTX 4070 Laptop GPU, 616.92, 8188, 8.9, 42.00, 55.00, 3105, 8001, 51\n"
+    line = (
+        "NVIDIA GeForce RTX 4070 Laptop GPU, 616.92, 8188, 8.9, 42.00, 55.00, 115.00, P5,"
+        " 3105, 8001, 51\n"
+    )
     out = parse_nvidia_smi_csv(line)
     assert out["gpu.name"] == "NVIDIA GeForce RTX 4070 Laptop GPU"
     assert out["gpu.compute_cap"] == "8.9"
-    assert out["gpu.power.limit"] == "42.00"
+    assert out["gpu.enforced.power.limit"] == "42.00"
     assert len(out) == len(GPU_QUERY_FIELDS)
 
 

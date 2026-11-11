@@ -13,6 +13,7 @@ import importlib
 import platform
 import re
 import subprocess
+from importlib import metadata
 from pathlib import Path
 
 GPU_QUERY_FIELDS = (
@@ -20,24 +21,27 @@ GPU_QUERY_FIELDS = (
     "driver_version",
     "memory.total",
     "compute_cap",
-    "power.limit",
+    "enforced.power.limit",  # "power.limit" reports [N/A] on this laptop GPU
     "power.default_limit",
+    "power.max_limit",
+    "pstate",
     "clocks.max.sm",
     "clocks.max.mem",
     "temperature.gpu",
 )
 
-PY_PACKAGES = (
-    "torch",
-    "torchvision",
-    "onnx",
-    "onnxruntime",
-    "tensorrt",
-    "modelopt",
-    "numpy",
-    "cv2",
-    "pycocotools",
-)
+# import name -> distribution name (versions read from package metadata)
+PY_PACKAGES = {
+    "torch": "torch",
+    "torchvision": "torchvision",
+    "onnx": "onnx",
+    "onnxruntime": "onnxruntime-gpu",
+    "tensorrt": "tensorrt-cu13",
+    "modelopt": "nvidia-modelopt",
+    "numpy": "numpy",
+    "cv2": "opencv-python-headless",
+    "pycocotools": "pycocotools",
+}
 
 
 def _run(cmd: list[str]) -> str | None:
@@ -78,11 +82,11 @@ def parse_trt_header_version(text: str) -> str | None:
 
 def _py_versions() -> dict[str, str]:
     out = {}
-    for name in PY_PACKAGES:
+    for name, dist in PY_PACKAGES.items():
         try:
-            mod = importlib.import_module(name)
-            out[f"py.{name}"] = str(getattr(mod, "__version__", "unknown"))
-        except Exception as e:  # noqa: BLE001 - record any import failure verbatim
+            importlib.import_module(name)
+            out[f"py.{name}"] = metadata.version(dist)
+        except Exception as e:  # noqa: BLE001 - record any import/metadata failure verbatim
             out[f"py.{name}"] = f"MISSING ({type(e).__name__})"
     return out
 
