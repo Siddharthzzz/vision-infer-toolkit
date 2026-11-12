@@ -14,7 +14,7 @@ from dataclasses import asdict
 from ..backends import BACKENDS, make_runner, warm_compile
 from ..models import REGISTRY, get_adapter
 from ..runinfo import RESULTS, append_rows, new_run
-from .session import COOLDOWN_MARGIN_C, cooldown, preflight
+from .session import cooldown, cooldown_target, preflight
 from .stats import summarize_latency
 from .telemetry import GpuMonitor, SessionState, trial_flags
 from .timing import time_gpu, time_gpu_throughput
@@ -142,7 +142,8 @@ def run(
 
     # ---- interleaved trials ----------------------------------------------------------------
     records = []  # (cfg, trial, result, telemetry, cooldown_timeout)
-    target = session.idle_temp_c + COOLDOWN_MARGIN_C
+    target = cooldown_target(session.idle_temp_c)
+    print(f"cooldown target {target:.1f} C")
     for trial in range(trials):
         for cfg in configs:
             if cfg["status"] != "ok":

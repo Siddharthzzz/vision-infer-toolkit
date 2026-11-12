@@ -71,7 +71,7 @@ percentiles can be computed.
 | Trials `R` per configuration | 5 | Captures trial-to-trial (thermal/clock) variance |
 | Trial order | **interleaved round-robin** across all configurations of one model (A B C A B C …) | Slow drift (heat soak) spreads evenly instead of penalising whichever config runs last |
 | Inputs | 64 real validation images, pre-processed once, cycled | Data-dependent work (NMS, top-k) behaves realistically, with no I/O in the loop |
-| Cool-down before each trial | wait until GPU temperature ≤ session idle baseline + 5 °C, with a 300 s timeout | Every trial starts from a comparable thermal state. A timeout sets a flag. |
+| Cool-down before each trial | wait until GPU temperature ≤ session idle baseline + 5 °C, with a 300 s timeout (amended by A9: ≤ max(60 °C, idle + 5 °C)) | Every trial starts from a comparable thermal state. A timeout sets a flag. |
 
 The idle baseline is the median GPU temperature over 60 s of idle at session start, recorded
 in the CSV.
@@ -247,7 +247,8 @@ before baselines are collected.
 
 ## 10. Amendments
 
-All dated 2026-11-12, made after the M2 pilot and before any latency baseline was collected.
+A1–A8 are dated 2026-11-12, made after the M2 pilot and before any latency baseline was
+collected. A9 was made later the same day, during the baseline run (see its entry).
 Pilot data: `results/m2_pilot.csv`, `m2_pilot_coldstart.csv`, `m2_pilot_telemetry.csv`,
 `m2_pilot_summary.csv` (YOLOX-S, eager FP32, batch 1).
 
@@ -302,3 +303,25 @@ Compile rows are labelled accordingly.
 **A8. Accuracy is evaluated at batch 1** for every backend. Batch size does not change these
 models' eval-mode outputs, and batch 1 avoids extra `torch.compile` recompiles for a smaller
 final batch.
+
+**A9. Cool-down target: 60 °C floor** (2026-11-12, made *during* the M2 baseline run, after
+YOLOX-S latency was collected and while RT-DETR-R18 latency was in progress). The §3.3 target
+(idle + 5 °C) is replaced by **max(60 °C, idle + 5 °C)**. Reason: wall-clock time. Cooling
+from about 82 °C under load back to idle + 5 °C before every trial made the run too long for
+the machine owner. The `max` keeps the original rule when the idle is hot, so the target is
+never unreachably close to idle.
+
+Rows affected, identifiable by `git_commit`:
+
+| Phase | Idle (`idle_temp_c`) | Target used |
+|---|---|---|
+| YOLOX-S latency | 54 °C | 59 °C (original rule) |
+| RT-DETR-R18 latency | 51 °C | 56 °C (original rule; that process started before A9) |
+| everything later | — | max(60 °C, idle + 5 °C) |
+
+Within each (model, mode) phase every trial uses the same target, so backend and batch
+comparisons inside a phase are unaffected. Comparisons *across* phases mix targets 1–4 °C
+apart. Whether that matters was **not measured**. The actual start temperature of every trial
+is in `temp_start_c`, so it can be checked against latency afterwards. `cooldown_timeout` keeps
+its meaning (target not reached within 300 s). The pilot (`pilot.py`) is unchanged, because it
+documents the rule that was in force when it ran.

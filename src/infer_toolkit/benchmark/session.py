@@ -17,6 +17,7 @@ from .telemetry import POWER_SOURCE_AC
 
 BENCH_STATE = REPO_ROOT / "configs/bench_state.yaml"
 COOLDOWN_MARGIN_C = 5.0
+COOLDOWN_FLOOR_C = 60.0  # amendment A9
 COOLDOWN_TIMEOUT_S = 300.0
 
 # Windows 11 power-mode overlay GUIDs (ActiveOverlayAcPowerScheme)
@@ -138,6 +139,12 @@ def preflight(idle_seconds: float = 60.0, hz: float = 2.0) -> Session:
         windows_power_mode=windows_power_mode(),
         vendor_profile=vendor_profile(),
     )
+
+
+def cooldown_target(idle_temp_c: float) -> float:
+    """Per-trial cool-down target (methodology §3.3 as amended by A9): a fixed 60 °C floor,
+    never below idle + 5 °C, so a hot idle cannot make every cool-down time out."""
+    return max(COOLDOWN_FLOOR_C, idle_temp_c + COOLDOWN_MARGIN_C)
 
 
 def cooldown(target_c: float, timeout_s: float = COOLDOWN_TIMEOUT_S) -> tuple[bool, float]:
