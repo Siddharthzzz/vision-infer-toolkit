@@ -1,4 +1,4 @@
 # Machine state that cannot be read programmatically (methodology §5.1).
 # Set this by hand before a benchmark session; it is copied into every results row.
 # Example values: "lenovo_vantage_performance", "asus_armoury_turbo", "msi_center_extreme".
-vendor_profile: unset
+vendor_profile: asus_rog_zephyrus_g16_armoury_turbo  # GPU mode: Standard (MSHybrid)
