@@ -19,3 +19,4 @@ psutil                 # YOLOX imports
 thop                   # YOLOX imports
 tensorboard            # RT-DETR (rtdetrv2_pytorch) config loader imports it
 faster-coco-eval       # RT-DETR requirements
+tabulate               # YOLOX COCOEvaluator (crosscheck script)
