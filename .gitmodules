@@ -1,0 +1,6 @@
+[submodule "third_party/YOLOX"]
+	path = third_party/YOLOX
+	url = https://github.com/Megvii-BaseDetection/YOLOX
+[submodule "third_party/RT-DETR"]
+	path = third_party/RT-DETR
+	url = https://github.com/lyuwenyu/RT-DETR

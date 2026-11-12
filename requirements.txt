@@ -12,3 +12,10 @@ opencv-python-headless
 numpy>=2,<3
 pandas
 pyyaml
+# model code dependencies (M2)
+transformers==5.22.2   # SegFormer-B0 (HF port of the official weights)
+loguru==0.7.3          # YOLOX imports
+psutil                 # YOLOX imports
+thop                   # YOLOX imports
+tensorboard            # RT-DETR (rtdetrv2_pytorch) config loader imports it
+faster-coco-eval       # RT-DETR requirements
