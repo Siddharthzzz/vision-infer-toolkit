@@ -33,10 +33,10 @@ def test_clean_trial_has_no_flags():
 
 def test_each_flag_rule():
     assert "battery" in trial_flags(summarize_samples([_s(), _s(src=1)]), _session())
-    assert "power_limit_changed" in trial_flags(
-        summarize_samples([_s(), _s(limit=42.0)]), _session()
-    )
-    assert "power_limit_changed" in trial_flags(summarize_samples([_s(limit=42.0)]), _session())
+    # amendment A2: a moving enforced limit is recorded, not flagged
+    t = summarize_samples([_s(limit=75.0), _s(limit=104.0)])
+    assert (t.power_limit_min_w, t.power_limit_max_w) == (75.0, 104.0)
+    assert trial_flags(t, _session()) == []
     assert "hw_throttle" in trial_flags(
         summarize_samples([_s(reasons=REASON_HW_THERMAL)] + [_s()] * 99), _session()
     )
@@ -66,6 +66,6 @@ def test_gpu_monitor_samples_real_device():
         time.sleep(0.5)
     s = mon.summary()
     assert 8 <= s.n_samples <= 14  # 1 start + ~10 periodic + 1 end
-    assert s.sm_clock_med_mhz > 0 and s.power_limit_w > 0
+    assert s.sm_clock_med_mhz > 0 and s.power_limit_min_w > 0
     assert 0 < s.temp_max_c < 110
     assert s.on_ac_all  # methodology requires AC; fails loudly on battery

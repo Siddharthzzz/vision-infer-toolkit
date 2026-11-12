@@ -51,8 +51,8 @@ class TelemetrySummary:
     temp_start_c: float
     temp_max_c: float
     power_med_w: float
-    power_limit_w: float
-    power_limit_changed: bool
+    power_limit_min_w: float  # enforced limit is dynamic on this laptop (amendment A2):
+    power_limit_max_w: float  # recorded, not flagged
     on_ac_all: bool
     frac_sw_power_cap: float
     frac_sw_thermal: float
@@ -77,8 +77,8 @@ def summarize_samples(samples: list[Sample]) -> TelemetrySummary:
         temp_start_c=float(samples[0].temp_c),
         temp_max_c=float(arr("temp_c").max()),
         power_med_w=float(np.median(arr("power_w"))),
-        power_limit_w=float(limits[0]),
-        power_limit_changed=bool(np.any(limits != limits[0])),
+        power_limit_min_w=float(limits.min()),
+        power_limit_max_w=float(limits.max()),
         on_ac_all=all(s.power_source == POWER_SOURCE_AC for s in samples),
         frac_sw_power_cap=float(np.mean((reasons & REASON_SW_POWER_CAP) != 0)),
         frac_sw_thermal=float(np.mean((reasons & REASON_SW_THERMAL) != 0)),
@@ -103,8 +103,6 @@ def trial_flags(
     flags = []
     if not t.on_ac_all:
         flags.append("battery")
-    if t.power_limit_changed or t.power_limit_w != session.power_limit_w:
-        flags.append("power_limit_changed")
     if t.frac_hw_throttle > 0:
         flags.append("hw_throttle")
     if t.frac_sw_thermal > SW_THERMAL_MAX_FRAC:

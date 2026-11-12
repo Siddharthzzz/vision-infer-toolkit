@@ -247,4 +247,58 @@ before baselines are collected.
 
 ## 10. Amendments
 
-_None yet._
+All dated 2026-11-12, made after the M2 pilot and before any latency baseline was collected.
+Pilot data: `results/m2_pilot.csv`, `m2_pilot_coldstart.csv`, `m2_pilot_telemetry.csv`,
+`m2_pilot_summary.csv` (YOLOX-S, eager FP32, batch 1).
+
+**A1. Warm-up check: the pre-registered rule failed, and the rule was at fault.** §9 asked
+whether the per-iteration latency levels off within the warm-up budget, and `pilot.py` set the
+test in advance: "settled" = the 25-iteration rolling median stays within ±2 % of the
+reference (median of iterations 1000–1999) *for the rest of the run*. That gave iteration 1967
+of 2000, against a budget ending at iteration 252, so the check **failed as written**.
+
+The data shows why. Iteration 0 took 207 ms (lazy initialisation), iterations 1–2 about 8 ms,
+and the rolling median first came within ±2 % at iteration 32 (about 0.45 s of GPU time). After
+iteration 250, though, 37.6 % of rolling windows were outside ±2 % and 15.3 % outside ±3 %:
+**steady-state jitter is larger than the tolerance**, so "stays within forever" detects jitter,
+not the end of warm-up. Decision: the warm-up budget (≥ 50 iterations and ≥ 2.0 s) is
+**unchanged**, because the measured transient ends well inside it. The analysis now also
+reports the end of the transient and the first post-budget window (`a1_*` columns) next to the
+original rule's result, which stays in the summary. Steady-state jitter is covered by per-trial
+percentiles and the trial spread, not by warm-up.
+
+**A2. `power_limit_changed` flag removed. The enforced limit is recorded as min and max.** On
+this laptop the enforced power limit is dynamic, consistent with NVIDIA Dynamic Boost. Within
+single pilot trials it ranged from 75.0 to 103.9 W (25–33 distinct values in about 97 samples
+per trial). Meanwhile, the GPU drew a median of 61–64 W, below the lowest limit; the SM clock
+median was 2550 MHz in all 5 sampled trials; and `sw_power_cap` was set in ≤ 1 % of samples.
+"Any change" therefore flagged every trial for something with no measurable effect. The
+latency CSV column `power_limit_w` becomes `power_limit_min_w` and `power_limit_max_w`.
+Performance-relevant slowdowns are still caught by `clock_outlier`, `sw_thermal` and
+`hw_throttle`. The env fingerprint (`env_id`) excludes the enforced limit for the same reason.
+
+**A3. Sampler overhead: no change.** The 10 Hz sampler showed no measurable difference: the
+trial-p50 ranges with and without it overlap (§7 rule). It stays on for all trials.
+
+**A4. Trial spread: passes.** (max − min) / median of trial p50s was 2.26 % with the sampler
+and 2.22 % without, under the 5 % gate.
+
+**A5. `busy_baseline`: rule unchanged, but every pilot trial was flagged.** Device memory in
+use before the pilot was 1612 MiB (1360 MiB measured at idle later the same day), against
+about 240 MiB in M0, so a Windows-side process is holding GPU memory. The 1024 MiB threshold is
+**not** raised to make the flag go away. Baselines are collected only after the source is closed
+and the preflight baseline is back under the threshold.
+
+**A6. Memory is measured in a separate process per configuration** (clarifying §4). Latency
+trials are interleaved in one process per model (§3.3), and a shared process would contaminate
+the "before this process created a CUDA context" baseline. `benchmark/memory.py` runs each
+configuration in a fresh subprocess.
+
+**A7. `torch.compile(mode="max-autotune")` does not autotune GEMMs on this GPU.** Inductor
+logs `Not enough SMs to use max_autotune_gemm mode`: the RTX 4070 Laptop has 36 SMs, below
+Inductor's threshold. The other max-autotune behaviour, including CUDA Graphs, still applies.
+Compile rows are labelled accordingly.
+
+**A8. Accuracy is evaluated at batch 1** for every backend. Batch size does not change these
+models' eval-mode outputs, and batch 1 avoids extra `torch.compile` recompiles for a smaller
+final batch.

@@ -179,13 +179,22 @@ def analyze() -> dict:
     tel = pd.read_csv(RESULTS / "m2_pilot_telemetry.csv")
     tl = tel[(tel.part == "trials") & (tel.run_id == pt.run_id.iloc[-1])]
 
+    # Amendment A1 (added after the pre-registered rule failed; see methodology §10):
+    # end of the cold transient = first rolling-median window within tolerance, and the
+    # first post-budget window compared with the reference.
+    transient_end = int(np.argmax(ok))
+    post = ms[budget_end : budget_end + 100]
     out = {
         "cold_ref_p50_ms": round(ref, 4),
         "cold_first_iter_ms": round(float(ms[0]), 3),
         "settle_iter": settle,
         "settle_cum_gpu_ms": round(settle_ms, 1),
         "warmup_budget_end_iter": budget_end,
-        "warmup_budget_adequate": settle <= budget_end,
+        "warmup_budget_adequate": settle <= budget_end,  # pre-registered rule (A1: flawed)
+        "a1_transient_end_iter": transient_end,
+        "a1_transient_end_cum_gpu_ms": round(float(cs.cum_gpu_ms.iloc[transient_end]), 1),
+        "a1_post_budget_100_median_dev": round(float(np.median(post) / ref - 1), 4),
+        "a1_steady_frac_windows_outside_tol": round(float((~ok[budget_end:]).mean()), 4),
         "sampler_on_vs_off": compare(on, off),
         "spread_sampler_on": round(trial_spread(on), 4),
         "spread_sampler_off": round(trial_spread(off), 4),
