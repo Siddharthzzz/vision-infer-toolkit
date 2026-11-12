@@ -58,30 +58,44 @@ def read_temp_c() -> float:
         n.nvmlShutdown()
 
 
+# PowerGetEffectiveOverlayScheme = the overlay Windows actually applies. The slider value
+# (PowerGetActualOverlayScheme / registry) is ignored under non-Balanced plans such as
+# "High performance", so reading only the slider misreports the state (found 2026-11-12).
+_DLL = '[DllImport("powrprof.dll")] public static extern uint '
+_OVERLAY_PS = (
+    "$sig = '"
+    + _DLL
+    + "PowerGetEffectiveOverlayScheme(out Guid g); "
+    + _DLL
+    + "PowerGetActualOverlayScheme(out Guid g);'\n"
+    "$t = Add-Type -MemberDefinition $sig -Name P -Namespace W -PassThru\n"
+    "$e = [Guid]::Empty; [void]$t::PowerGetEffectiveOverlayScheme([ref]$e)\n"
+    "$a = [Guid]::Empty; [void]$t::PowerGetActualOverlayScheme([ref]$a)\n"
+    '"$e $a"\n'
+)
+
+
 def windows_power_mode() -> str:
-    """'<scheme name>/<overlay>' read through WSL interop; 'unknown' if unavailable."""
+    """'<plan>/effective=<overlay>/slider=<overlay>' via WSL interop; 'unknown' parts if not
+    readable. The effective overlay is what is in force."""
 
     def run(cmd):
         try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=20, cwd="/mnt/c")
-            return r.stdout.replace("\r", "")
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd="/mnt/c")
+            return r.stdout.replace("\r", "").strip()
         except (OSError, subprocess.SubprocessError):
             return ""
 
     scheme = run(["powershell.exe", "-NoProfile", "-Command", "powercfg /getactivescheme"])
-    name = scheme.split("(")[-1].split(")")[0].strip() if "(" in scheme else "unknown"
-    reg = run(
-        [
-            "reg.exe",
-            "query",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Power\User\PowerSchemes",
-            "/v",
-            "ActiveOverlayAcPowerScheme",
-        ]
+    plan = scheme.split("(")[-1].split(")")[0].strip() if "(" in scheme else "unknown"
+    parts = run(["powershell.exe", "-NoProfile", "-Command", _OVERLAY_PS]).split()
+    eff, slider = (parts + ["", ""])[:2] if len(parts) >= 2 else ("", "")
+    name = {**OVERLAYS, "00000000-0000-0000-0000-000000000000": "none"}
+    return (
+        f"{plan.replace(' ', '_').lower()}"
+        f"/effective={name.get(eff, eff or 'unknown')}"
+        f"/slider={OVERLAYS.get(slider, slider or 'unknown')}"
     )
-    guid = reg.split()[-1].strip() if "REG_SZ" in reg else ""
-    overlay = OVERLAYS.get(guid, guid or "unknown")
-    return f"{name.replace(' ', '_').lower()}/{overlay}"
 
 
 def vendor_profile() -> str:
