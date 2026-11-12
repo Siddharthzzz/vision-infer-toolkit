@@ -193,8 +193,10 @@ def analyze() -> dict:
         "limit_w_min": float(tl.limit_w.min()),
         "limit_w_median": float(tl.limit_w.median()),
         "limit_w_max": float(tl.limit_w.max()),
-        "flagged_trials": int((pt.flags.fillna("") != "").sum()),
-        "flags_seen": ";".join(sorted({f for x in pt.flags.dropna() for f in x.split(";") if f})),
+        "flagged_trials": int((pt["flags"].fillna("") != "").sum()),
+        "flags_seen": ";".join(
+            sorted({f for x in pt["flags"].dropna() for f in x.split(";") if f})
+        ),
     }
     append_rows(RESULTS / "m2_pilot_summary.csv", [{**new_run(), **{k: out[k] for k in out}}])
     for k, v in out.items():
