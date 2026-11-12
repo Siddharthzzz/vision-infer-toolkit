@@ -130,3 +130,14 @@ def test_stream_idle_on_return():
     s = torch.cuda.Stream()
     time_gpu(gpu_sleep(CYCLES), iters=5, warmup_iters=0, warmup_seconds=0.0, stream=s)
     assert s.query(), "stream still busy after time_gpu returned"
+
+
+def test_throughput_scales_with_k():
+    from infer_toolkit.benchmark.timing import time_gpu_throughput
+
+    ramp_clocks()
+    kw = dict(warmup_iters=3, warmup_seconds=0.0)
+    t10 = time_gpu_throughput(gpu_sleep(CYCLES), k=10, **kw)
+    t40 = time_gpu_throughput(gpu_sleep(CYCLES), k=40, **kw)
+    t10b = time_gpu_throughput(gpu_sleep(CYCLES), k=10, **kw)
+    assert 2.5 < t40 / ((t10 + t10b) / 2) < 5.5

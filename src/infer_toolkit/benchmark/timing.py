@@ -81,3 +81,35 @@ def time_gpu(
             samples[i] = start.elapsed_time(end)  # ms, measured by the GPU
 
     return TimingResult(samples_ms=samples, warmup_iters=n_warm, warmup_seconds=warm_s)
+
+
+def time_gpu_throughput(
+    fn: Callable[[], object],
+    *,
+    k: int,
+    warmup_iters: int = 50,
+    warmup_seconds: float = 2.0,
+    stream=None,
+) -> float:
+    """Throughput mode (methodology §3.4): GPU ms for `k` back-to-back calls of `fn` between
+    ONE pair of events, with no sync in between, so CPU launches overlap GPU work."""
+    if k < 1 or warmup_iters < 0 or warmup_seconds < 0:
+        raise ValueError("k >= 1, warmup_iters >= 0, warmup_seconds >= 0 required")
+    import torch
+
+    if stream is None:
+        stream = torch.cuda.current_stream()
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    with torch.cuda.stream(stream):
+        t0, n = time.perf_counter(), 0
+        while n < warmup_iters or time.perf_counter() - t0 < warmup_seconds:
+            fn()
+            n += 1
+        stream.synchronize()
+        start.record(stream)
+        for _ in range(k):
+            fn()
+        end.record(stream)
+        end.synchronize()
+    return start.elapsed_time(end)
