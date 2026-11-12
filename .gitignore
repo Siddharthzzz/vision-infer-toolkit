@@ -19,3 +19,4 @@ weights/
 results/*
 !results/*.csv
 !results/.gitkeep
+results/debug_*
