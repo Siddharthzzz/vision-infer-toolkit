@@ -305,7 +305,7 @@ models' eval-mode outputs, and batch 1 avoids extra `torch.compile` recompiles f
 final batch.
 
 **A9. Cool-down target: 60 °C floor** (2026-11-12, made *during* the M2 baseline run, after
-YOLOX-S latency was collected and while RT-DETR-R18 latency was in progress). The §3.3 target
+YOLOX-S latency was collected). The §3.3 target
 (idle + 5 °C) is replaced by **max(60 °C, idle + 5 °C)**. Reason: wall-clock time. Cooling
 from about 82 °C under load back to idle + 5 °C before every trial made the run too long for
 the machine owner. The `max` keeps the original rule when the idle is hot, so the target is
@@ -316,12 +316,15 @@ Rows affected, identifiable by `git_commit`:
 | Phase | Idle (`idle_temp_c`) | Target used |
 |---|---|---|
 | YOLOX-S latency | 54 °C | 59 °C (original rule) |
-| RT-DETR-R18 latency | 51 °C | 56 °C (original rule; that process started before A9) |
-| everything later | — | max(60 °C, idle + 5 °C) |
+| everything after YOLOX-S latency | — | max(60 °C, idle + 5 °C) |
+
+An RT-DETR-R18 latency run under the original rule (56 °C target) was stopped partway at the
+owner's request. Rows are written only when a phase completes, so none of its trials were
+saved, and that phase re-runs under A9.
 
 Within each (model, mode) phase every trial uses the same target, so backend and batch
-comparisons inside a phase are unaffected. Comparisons *across* phases mix targets 1–4 °C
-apart. Whether that matters was **not measured**. The actual start temperature of every trial
+comparisons inside a phase are unaffected. Comparisons between YOLOX-S latency and other
+phases mix targets about 1 °C apart. Whether that matters was **not measured**. The actual start temperature of every trial
 is in `temp_start_c`, so it can be checked against latency afterwards. `cooldown_timeout` keeps
 its meaning (target not reached within 300 s). The pilot (`pilot.py`) is unchanged, because it
 documents the rule that was in force when it ran.
