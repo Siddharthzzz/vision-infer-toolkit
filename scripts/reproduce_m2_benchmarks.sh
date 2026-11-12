@@ -8,6 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 MODELS="${MODELS:-yolox_s rtdetr_r18 segformer_b0}"
 PY=.venv/bin/python
+export PYTHONUNBUFFERED=1  # progress lines reach the log as they happen, not at process exit
 
 done_already() {  # $1 = csv basename, $2 = model
   [[ "${FORCE:-0}" == 1 ]] && return 1
